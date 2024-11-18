@@ -6,7 +6,7 @@ import java.util.UUID
 
 @Entity(tableName = "notes")
 data class Note(
-    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey var id: String = UUID.randomUUID().toString(),
     val title: String,
     val description: String
 ) {

@@ -8,22 +8,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.notesapp.databinding.FragmentNoteDetailBinding
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import java.util.Date
-import java.util.UUID
 
 private const val TAG = "NoteDetailFragment"
+
 class NoteDetailFragment : Fragment() {
-    private val args:NoteDetailFragmentArgs by navArgs()
+    private val args: NoteDetailFragmentArgs by navArgs()
     private val noteDetailViewModel: NoteDetailViewModel by viewModels {
         NoteDetailViewModelFactory(args.noteId)
     }
@@ -32,6 +30,8 @@ class NoteDetailFragment : Fragment() {
         get() = checkNotNull(_binding) {
             "cannot access the view because it is not null"
         }
+    private val firestore = FirebaseFirestore.getInstance()
+    private val notesCollection = firestore.collection("notes")
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,18 +44,21 @@ class NoteDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         binding.apply {
             noteTitle.doOnTextChanged { text, _, _, _ ->
                 noteDetailViewModel.updateNote { oldNote ->
-                    oldNote.copy(title = text.toString())
+                    val updatedNote = oldNote.copy(title = text.toString())
+                    updateFirebaseNote(updatedNote) // Update Firestore
+                    updatedNote
                 }
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                noteDetailViewModel.note.collect {
-                        note -> note?.let { updateUi(it) }
+                noteDetailViewModel.note.collect { note ->
+                    note?.let { updateUi(it) }
                 }
             }
         }
@@ -68,9 +71,25 @@ class NoteDetailFragment : Fragment() {
 
     private fun updateUi(note: Note) {
         binding.apply {
-            if(noteTitle.text.toString() != note.title) {
+            if (noteTitle.text.toString() != note.title) {
                 noteTitle.setText(note.title)
             }
         }
+    }
+
+    private fun updateFirebaseNote(note: Note) {
+        val noteData = mapOf(
+            "Note" to note.description,
+            "Title" to note.title
+        )
+        notesCollection.document(note.id.toString())
+            .set(noteData)
+            .addOnSuccessListener {
+                // Log or handle successful update if needed
+            }
+            .addOnFailureListener { e ->
+                // Log or handle the error
+                e.printStackTrace()
+            }
     }
 }
