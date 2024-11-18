@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Notes App</string>
+    <string name="add_note">Add Note</string>
+    <string name="title">Title</string>
+    <string name="description">Description</string>
+    <string name="save">Save</string>
+    <string name="delete_confirm">Are you sure you want to delete this note?</string>
+    <string name="new_note">New Note</string>
+    <string name="note_title_label">Title</string>
+    <string name="note_title_hint">Enter a title for the note.</string>
+    <string name="note_details_label">Your note</string>
+</resources>
